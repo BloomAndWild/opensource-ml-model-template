@@ -1,0 +1,31 @@
+
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - HOST="$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --password-stdin --username AWS ${HOST}
+
+      # Local image names
+      - LOCAL_BUILD_NAME="app"
+
+      # Git SHA
+      - SHA="${CODEBUILD_RESOLVED_SOURCE_VERSION}"
+      - REPO_RELEASE_BUILD_IMAGE="${REPOSITORY_URI}:${ENVIRONMENT}_${SHA}"
+      - REPO_LATEST_BUILD_IMAGE="${REPOSITORY_URI}:${ENVIRONMENT}_latest"
+      - echo 'Setting files executable as workaround for https://forums.aws.amazon.com/thread.jspa?threadID=244898'
+      - chmod 755 *.sh
+  build:
+    commands:
+      - echo Building the Docker image...
+      - docker build -t ${LOCAL_BUILD_NAME} -f docker/Dockerfile .
+      - docker tag ${LOCAL_BUILD_NAME} ${REPO_RELEASE_BUILD_IMAGE}
+      - docker tag ${LOCAL_BUILD_NAME} ${REPO_LATEST_BUILD_IMAGE}
+
+  post_build:
+    commands:
+      - docker push ${REPO_RELEASE_BUILD_IMAGE}
+      - docker push ${REPO_LATEST_BUILD_IMAGE}
