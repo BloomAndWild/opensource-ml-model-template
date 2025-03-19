@@ -1,3 +1,5 @@
+**This repo is ready-only and not being actively maintained**
+
 # opensource-ml-model-template
 
 This is an example application to accompany the Code & Wild blog post [Building a Machine Learning Orchestration Platform: Part 1](https://www.bloomandwild.com).
